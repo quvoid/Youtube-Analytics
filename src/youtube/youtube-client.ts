@@ -21,16 +21,29 @@ import {
 export class YouTubeClient {
   private youtube: youtube_v3.Youtube;
   private youtubeAnalytics: youtubeAnalytics_v2.Youtubeanalytics;
+  private defaultChannelId?: string;
 
-  constructor(auth: OAuth2Client) {
+  constructor(auth: OAuth2Client, defaultChannelId?: string) {
     this.youtube = google.youtube({ version: 'v3', auth });
     this.youtubeAnalytics = google.youtubeAnalytics({ version: 'v2', auth });
+    this.defaultChannelId = defaultChannelId || process.env.YOUTUBE_CHANNEL_ID || process.env.DEFAULT_CHANNEL_ID;
+  }
+
+  private resolveChannelId(channelId?: string): string | undefined {
+    return channelId || this.defaultChannelId;
   }
 
   // YouTube Data API methods
-  async getChannelInfo(): Promise<ChannelInfo> {
+  async getChannelInfo(channelId?: string): Promise<ChannelInfo> {
+    const targetChannelId = this.resolveChannelId(channelId);
     try {
       const response = await this.withRetry(async () => {
+        if (targetChannelId) {
+          return await this.youtube.channels.list({
+            part: ['snippet', 'statistics'],
+            id: [targetChannelId]
+          });
+        }
         return await this.youtube.channels.list({
           part: ['snippet', 'statistics'],
           mine: true
@@ -38,7 +51,7 @@ export class YouTubeClient {
       });
 
       if (!response.data.items || response.data.items.length === 0) {
-        throw new Error('No channel found for the authenticated user');
+        throw new Error(targetChannelId ? `No channel found for channel ID: ${targetChannelId}` : 'No channel found for the authenticated user');
       }
 
       const channel = response.data.items[0];
@@ -153,15 +166,15 @@ export class YouTubeClient {
     }
   }
 
-  async getChannelVideos(maxResults: number = 50): Promise<SearchResult[]> {
+  async getChannelVideos(maxResults: number = 50, channelId?: string): Promise<SearchResult[]> {
     try {
-      // First get the channel info to get the channel ID
-      const channelInfo = await this.getChannelInfo();
+      // First get the channel ID
+      const targetChannelId = this.resolveChannelId(channelId) || (await this.getChannelInfo()).id;
       
       const response = await this.withRetry(async () => {
         return await this.youtube.search.list({
           part: ['snippet'],
-          channelId: channelInfo.id,
+          channelId: targetChannelId,
           type: ['video'],
           maxResults,
           order: 'date'
@@ -199,12 +212,13 @@ export class YouTubeClient {
     startDate?: string;
     endDate?: string;
     maxResults?: number;
+    channelId?: string;
   }): Promise<SearchResult[]> {
     try {
-      const { query, startDate, endDate, maxResults = 25 } = params;
+      const { query, startDate, endDate, maxResults = 25, channelId } = params;
       
-      // First get the channel info to get the channel ID
-      const channelInfo = await this.getChannelInfo();
+      // Get the channel ID
+      const targetChannelId = this.resolveChannelId(channelId) || (await this.getChannelInfo()).id;
       
       // Convert dates to RFC 3339 format if provided
       let publishedAfter: string | undefined;
@@ -221,7 +235,7 @@ export class YouTubeClient {
       const response = await this.withRetry(async () => {
         return await this.youtube.search.list({
           part: ['snippet'],
-          channelId: channelInfo.id,
+          channelId: targetChannelId,
           type: ['video'],
           maxResults,
           order: 'date',
@@ -259,6 +273,7 @@ export class YouTubeClient {
 
   // YouTube Analytics API methods
   async getChannelAnalytics(params: AnalyticsParams): Promise<any> {
+    const targetChannelId = this.resolveChannelId(params.channelId);
     try {
       const response = await this.withRetry(async () => {
         return await this.youtubeAnalytics.reports.query({
@@ -269,7 +284,7 @@ export class YouTubeClient {
           filters: params.filters,
           maxResults: params.maxResults,
           sort: params.sort,
-          ids: 'channel==MINE'
+          ids: targetChannelId ? `channel==${targetChannelId}` : 'channel==MINE'
         });
       });
 
@@ -285,6 +300,7 @@ export class YouTubeClient {
   }
 
   async getVideoAnalytics(videoId: string, params: AnalyticsParams): Promise<any> {
+    const targetChannelId = this.resolveChannelId(params.channelId);
     try {
       const response = await this.withRetry(async () => {
         return await this.youtubeAnalytics.reports.query({
@@ -295,7 +311,7 @@ export class YouTubeClient {
           filters: `video==${videoId}`,
           maxResults: params.maxResults,
           sort: params.sort,
-          ids: 'channel==MINE'
+          ids: targetChannelId ? `channel==${targetChannelId}` : 'channel==MINE'
         });
       });
 
@@ -312,7 +328,8 @@ export class YouTubeClient {
   }
 
   // Channel Health Check methods
-  async getChannelOverview(params: { startDate: string; endDate: string }): Promise<any> {
+  async getChannelOverview(params: { startDate: string; endDate: string; channelId?: string }): Promise<any> {
+    const targetChannelId = this.resolveChannelId(params.channelId);
     try {
       const response = await this.withRetry(async () => {
         return await this.youtubeAnalytics.reports.query({
@@ -320,7 +337,7 @@ export class YouTubeClient {
           endDate: params.endDate,
           metrics: 'views,estimatedMinutesWatched,averageViewDuration,averageViewPercentage,subscribersGained,subscribersLost',
           dimensions: 'day',
-          ids: 'channel==MINE',
+          ids: targetChannelId ? `channel==${targetChannelId}` : 'channel==MINE',
           sort: 'day'
         });
       });
@@ -343,7 +360,9 @@ export class YouTubeClient {
     period1End: string;
     period2Start: string;
     period2End: string;
+    channelId?: string;
   }): Promise<ComparisonResult<any>> {
+    const targetChannelId = this.resolveChannelId(params.channelId);
     try {
       // Validate required parameters
       if (!params.metrics || !Array.isArray(params.metrics)) {
@@ -356,7 +375,7 @@ export class YouTubeClient {
             startDate: params.period1Start,
             endDate: params.period1End,
             metrics: params.metrics.join(','),
-            ids: 'channel==MINE'
+            ids: targetChannelId ? `channel==${targetChannelId}` : 'channel==MINE'
           });
         }),
         this.withRetry(async () => {
@@ -364,7 +383,7 @@ export class YouTubeClient {
             startDate: params.period2Start,
             endDate: params.period2End,
             metrics: params.metrics.join(','),
-            ids: 'channel==MINE'
+            ids: targetChannelId ? `channel==${targetChannelId}` : 'channel==MINE'
           });
         })
       ]);
@@ -536,7 +555,7 @@ export class YouTubeClient {
   }
 
   // Engagement Analytics methods
-  async getEngagementMetrics(params: { videoId?: string; startDate: string; endDate: string }): Promise<any> {
+  async getEngagementMetrics(params: { videoId?: string; startDate: string; endDate: string; channelId?: string }): Promise<any> {
     const filter = params.videoId ? `video==${params.videoId}` : undefined;
     return this.getChannelAnalytics({
       ...params,
@@ -547,7 +566,7 @@ export class YouTubeClient {
     });
   }
 
-  async getSharingAnalytics(params: { videoId?: string; startDate: string; endDate: string }): Promise<any> {
+  async getSharingAnalytics(params: { videoId?: string; startDate: string; endDate: string; channelId?: string }): Promise<any> {
     const filter = params.videoId ? `video==${params.videoId}` : undefined;
     return this.getChannelAnalytics({
       ...params,
@@ -558,7 +577,7 @@ export class YouTubeClient {
     });
   }
 
-  async getCardEndScreenPerformance(params: { videoId: string; startDate: string; endDate: string }): Promise<any> {
+  async getCardEndScreenPerformance(params: { videoId: string; startDate: string; endDate: string; channelId?: string }): Promise<any> {
     return this.getChannelAnalytics({
       ...params,
       metrics: ['cardImpressions', 'cardClicks', 'cardClickRate'],

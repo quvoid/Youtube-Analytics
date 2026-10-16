@@ -39,12 +39,16 @@ export class AuthManager {
       // Load credentials to get client_id and client_secret
       const credentialsContent = await fs.readFile(this.CREDENTIALS_PATH, 'utf8');
       const credentials: AuthConfig = JSON.parse(credentialsContent);
+      const clientConfig = credentials.installed || credentials.web;
+      if (!clientConfig) {
+        throw new AuthenticationError('Invalid credentials.json: missing installed or web configuration');
+      }
       
       // Create OAuth2Client with proper credentials
       this.authClient = new OAuth2Client(
-        credentials.web.client_id,
-        credentials.web.client_secret,
-        credentials.web.redirect_uris[0]
+        clientConfig.client_id,
+        clientConfig.client_secret,
+        clientConfig.redirect_uris?.[0] || 'http://localhost'
       );
       
       // Set the stored tokens
@@ -139,11 +143,15 @@ export class AuthManager {
       // Read credentials to get client_id and client_secret
       const credentialsContent = await fs.readFile(this.CREDENTIALS_PATH, 'utf8');
       const credentials: AuthConfig = JSON.parse(credentialsContent);
+      const clientConfig = credentials.installed || credentials.web;
+      if (!clientConfig) {
+        throw new AuthenticationError('Invalid credentials.json: missing installed or web configuration');
+      }
 
       const tokenData: TokenData = {
         type: 'authorized_user',
-        client_id: credentials.web.client_id,
-        client_secret: credentials.web.client_secret,
+        client_id: clientConfig.client_id,
+        client_secret: clientConfig.client_secret,
         refresh_token: client.credentials.refresh_token!,
         access_token: client.credentials.access_token || undefined,
         expiry_date: client.credentials.expiry_date || undefined
@@ -151,8 +159,12 @@ export class AuthManager {
 
       await fs.writeFile(this.TOKEN_PATH, JSON.stringify(tokenData, null, 2));
       
-      // Set restrictive permissions on token file
-      await fs.chmod(this.TOKEN_PATH, 0o600);
+      // Set restrictive permissions on token file if supported
+      try {
+        await fs.chmod(this.TOKEN_PATH, 0o600);
+      } catch {
+        // chmod might not be supported on Windows filesystem
+      }
     } catch (error) {
       throw new AuthenticationError(`Failed to save token: ${error}`);
     }

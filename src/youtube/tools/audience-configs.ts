@@ -12,12 +12,13 @@ export const audienceTools: ToolConfig[] = [
     schema: z.object({
       startDate: z.string().describe("Start date (YYYY-MM-DD)"),
       endDate: z.string().describe("End date (YYYY-MM-DD)"),
-      videoId: z.string().optional().describe("Optional video ID for video-specific analysis")
+      videoId: z.string().optional().describe("Optional video ID for video-specific analysis"),
+      channelId: z.string().optional().describe("Optional YouTube Channel ID (e.g. UCxxxxxxxx). If omitted, queries authenticated account.")
     }),
-    handler: async ({ startDate, endDate, videoId }, { getYouTubeClient }: ToolContext) => {
+    handler: async ({ startDate, endDate, videoId, channelId }, { getYouTubeClient }: ToolContext) => {
       try {
         const youtubeClient = await getYouTubeClient();
-        const rawData = await youtubeClient.getDemographics({ startDate, endDate, videoId, metrics: [] });
+        const rawData = await youtubeClient.getDemographics({ startDate, endDate, videoId, channelId, metrics: [] });
         
         // Parse and format the data
         const parsedData = parseAnalyticsResponse(rawData);
@@ -48,12 +49,13 @@ export const audienceTools: ToolConfig[] = [
     schema: z.object({
       startDate: z.string().describe("Start date (YYYY-MM-DD)"),
       endDate: z.string().describe("End date (YYYY-MM-DD)"),
-      videoId: z.string().optional().describe("Optional video ID for video-specific analysis")
+      videoId: z.string().optional().describe("Optional video ID for video-specific analysis"),
+      channelId: z.string().optional().describe("Optional YouTube Channel ID (e.g. UCxxxxxxxx). If omitted, queries authenticated account.")
     }),
-    handler: async ({ startDate, endDate, videoId }, { getYouTubeClient }: ToolContext) => {
+    handler: async ({ startDate, endDate, videoId, channelId }, { getYouTubeClient }: ToolContext) => {
       try {
         const youtubeClient = await getYouTubeClient();
-        const rawData = await youtubeClient.getGeographicDistribution({ startDate, endDate, videoId, metrics: [] });
+        const rawData = await youtubeClient.getGeographicDistribution({ startDate, endDate, videoId, channelId, metrics: [] });
         
         // Parse and format the data
         const parsedData = parseAnalyticsResponse(rawData);
@@ -84,12 +86,13 @@ export const audienceTools: ToolConfig[] = [
     schema: z.object({
       startDate: z.string().describe("Start date (YYYY-MM-DD)"),
       endDate: z.string().describe("End date (YYYY-MM-DD)"),
-      videoId: z.string().optional().describe("Optional video ID for video-specific analysis")
+      videoId: z.string().optional().describe("Optional video ID for video-specific analysis"),
+      channelId: z.string().optional().describe("Optional YouTube Channel ID (e.g. UCxxxxxxxx). If omitted, queries authenticated account.")
     }),
-    handler: async ({ startDate, endDate, videoId }, { getYouTubeClient }: ToolContext) => {
+    handler: async ({ startDate, endDate, videoId, channelId }, { getYouTubeClient }: ToolContext) => {
       try {
         const youtubeClient = await getYouTubeClient();
-        const rawData = await youtubeClient.getSubscriberAnalytics({ startDate, endDate, videoId, metrics: [] });
+        const rawData = await youtubeClient.getSubscriberAnalytics({ startDate, endDate, videoId, channelId, metrics: [] });
         
         // Parse and format the data
         const parsedData = parseAnalyticsResponse(rawData);

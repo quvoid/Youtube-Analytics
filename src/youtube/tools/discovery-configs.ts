@@ -11,12 +11,13 @@ export const discoveryTools: ToolConfig[] = [
     category: "discovery",
     schema: z.object({
       startDate: z.string().describe("Start date (YYYY-MM-DD)"),
-      endDate: z.string().describe("End date (YYYY-MM-DD)")
+      endDate: z.string().describe("End date (YYYY-MM-DD)"),
+      channelId: z.string().optional().describe("Optional YouTube Channel ID (e.g. UCxxxxxxxx). If omitted, queries authenticated account.")
     }),
-    handler: async ({ startDate, endDate }, { getYouTubeClient }: ToolContext) => {
+    handler: async ({ startDate, endDate, channelId }, { getYouTubeClient }: ToolContext) => {
       try {
         const youtubeClient = await getYouTubeClient();
-        const rawData = await youtubeClient.getOptimalPostingTime({ startDate, endDate });
+        const rawData = await youtubeClient.getOptimalPostingTime({ startDate, endDate, channelId });
         
         // Parse and analyze the data
         const parsedData = parseAnalyticsResponse(rawData);
@@ -47,12 +48,13 @@ export const discoveryTools: ToolConfig[] = [
     schema: z.object({
       startDate: z.string().describe("Start date (YYYY-MM-DD)"),
       endDate: z.string().describe("End date (YYYY-MM-DD)"),
-      videoId: z.string().optional().describe("Optional video ID for video-specific analysis")
+      videoId: z.string().optional().describe("Optional video ID for video-specific analysis"),
+      channelId: z.string().optional().describe("Optional YouTube Channel ID (e.g. UCxxxxxxxx). If omitted, queries authenticated account.")
     }),
-    handler: async ({ startDate, endDate, videoId }, { getYouTubeClient }: ToolContext) => {
+    handler: async ({ startDate, endDate, videoId, channelId }, { getYouTubeClient }: ToolContext) => {
       try {
         const youtubeClient = await getYouTubeClient();
-        const rawData = await youtubeClient.getTrafficSources({ startDate, endDate, videoId, metrics: [] });
+        const rawData = await youtubeClient.getTrafficSources({ startDate, endDate, videoId, channelId, metrics: [] });
         
         // Parse and format the data
         const parsedData = parseAnalyticsResponse(rawData);
@@ -83,12 +85,13 @@ export const discoveryTools: ToolConfig[] = [
     schema: z.object({
       videoId: z.string().describe("Video ID to analyze search terms for"),
       startDate: z.string().describe("Start date (YYYY-MM-DD)"),
-      endDate: z.string().describe("End date (YYYY-MM-DD)")
+      endDate: z.string().describe("End date (YYYY-MM-DD)"),
+      channelId: z.string().optional().describe("Optional YouTube Channel ID (e.g. UCxxxxxxxx). If omitted, queries authenticated account.")
     }),
-    handler: async ({ videoId, startDate, endDate }, { getYouTubeClient }: ToolContext) => {
+    handler: async ({ videoId, startDate, endDate, channelId }, { getYouTubeClient }: ToolContext) => {
       try {
         const youtubeClient = await getYouTubeClient();
-        const rawData = await youtubeClient.getSearchTerms({ videoId, startDate, endDate, metrics: [] });
+        const rawData = await youtubeClient.getSearchTerms({ videoId, startDate, endDate, channelId, metrics: [] });
         
         // Parse and format the data
         const parsedData = parseAnalyticsResponse(rawData);

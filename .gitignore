@@ -4,3 +4,5 @@ build
 
 credentials.json
 token.json
+**/credentials.json
+**/token.json

@@ -6,6 +6,7 @@ export interface AnalyticsParams {
   filters?: string;
   maxResults?: number;
   sort?: string;
+  channelId?: string;
 }
 
 export interface VideoAnalyticsParams extends AnalyticsParams {

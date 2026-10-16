@@ -12,13 +12,14 @@ export const performanceTools: ToolConfig[] = [
     schema: z.object({
       videoId: z.string().describe("Video ID to analyze"),
       startDate: z.string().describe("Start date (YYYY-MM-DD)"),
-      endDate: z.string().describe("End date (YYYY-MM-DD)")
+      endDate: z.string().describe("End date (YYYY-MM-DD)"),
+      channelId: z.string().optional().describe("Optional YouTube Channel ID (e.g. UCxxxxxxxx). If omitted, queries authenticated account.")
     }),
-    handler: async ({ videoId, startDate, endDate }, { getYouTubeClient }: ToolContext) => {
+    handler: async ({ videoId, startDate, endDate, channelId }, { getYouTubeClient }: ToolContext) => {
       try {
         const youtubeClient = await getYouTubeClient();
         const rawData = await youtubeClient.getAudienceRetention({ 
-          videoId, startDate, endDate, metrics: [] 
+          videoId, startDate, endDate, channelId, metrics: [] 
         });
         
         // Parse and analyze the data
@@ -53,13 +54,14 @@ ${formattedText}`
       videoId: z.string().describe("Video ID to analyze"),
       startDate: z.string().describe("Start date (YYYY-MM-DD)"),
       endDate: z.string().describe("End date (YYYY-MM-DD)"),
-      threshold: z.number().optional().default(0.1).describe("Drop threshold (default 0.1 = 10%)")
+      threshold: z.number().optional().default(0.1).describe("Drop threshold (default 0.1 = 10%)"),
+      channelId: z.string().optional().describe("Optional YouTube Channel ID (e.g. UCxxxxxxxx). If omitted, queries authenticated account.")
     }),
-    handler: async ({ videoId, startDate, endDate, threshold }, { getYouTubeClient }: ToolContext) => {
+    handler: async ({ videoId, startDate, endDate, threshold, channelId }, { getYouTubeClient }: ToolContext) => {
       try {
         const youtubeClient = await getYouTubeClient();
         const rawData = await youtubeClient.getAudienceRetention({ 
-          videoId, startDate, endDate, metrics: [] 
+          videoId, startDate, endDate, channelId, metrics: [] 
         });
         
         // Parse and analyze the data

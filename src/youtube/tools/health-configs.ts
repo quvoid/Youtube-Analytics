@@ -11,12 +11,13 @@ export const healthTools: ToolConfig[] = [
     category: "health",
     schema: z.object({
       startDate: z.string().describe("Start date (YYYY-MM-DD)"),
-      endDate: z.string().describe("End date (YYYY-MM-DD)")
+      endDate: z.string().describe("End date (YYYY-MM-DD)"),
+      channelId: z.string().optional().describe("Optional YouTube Channel ID (e.g. UCxxxxxxxx). If omitted, queries authenticated account.")
     }),
-    handler: async ({ startDate, endDate }, { getYouTubeClient }: ToolContext) => {
+    handler: async ({ startDate, endDate, channelId }, { getYouTubeClient }: ToolContext) => {
       try {
         const youtubeClient = await getYouTubeClient();
-        const rawData = await youtubeClient.getChannelOverview({ startDate, endDate });
+        const rawData = await youtubeClient.getChannelOverview({ startDate, endDate, channelId });
         
         // Parse and format the data
         const parsedData = parseAnalyticsResponse(rawData);
@@ -49,9 +50,10 @@ export const healthTools: ToolConfig[] = [
       period1Start: z.string().describe("Period 1 start date (YYYY-MM-DD)"),
       period1End: z.string().describe("Period 1 end date (YYYY-MM-DD)"),
       period2Start: z.string().describe("Period 2 start date (YYYY-MM-DD)"),
-      period2End: z.string().describe("Period 2 end date (YYYY-MM-DD)")
+      period2End: z.string().describe("Period 2 end date (YYYY-MM-DD)"),
+      channelId: z.string().optional().describe("Optional YouTube Channel ID (e.g. UCxxxxxxxx). If omitted, queries authenticated account.")
     }),
-    handler: async ({ metrics, period1Start, period1End, period2Start, period2End }, { getYouTubeClient }: ToolContext) => {
+    handler: async ({ metrics, period1Start, period1End, period2Start, period2End, channelId }, { getYouTubeClient }: ToolContext) => {
       try {
         const youtubeClient = await getYouTubeClient();
         const rawComparison = await youtubeClient.getComparisonMetrics({
@@ -59,7 +61,8 @@ export const healthTools: ToolConfig[] = [
           period1Start,
           period1End,
           period2Start,
-          period2End
+          period2End,
+          channelId
         });
         
         // Parse and format the data
@@ -95,15 +98,17 @@ ${formattedText}`
     category: "health",
     schema: z.object({
       startDate: z.string().describe("Start date (YYYY-MM-DD)"),
-      endDate: z.string().describe("End date (YYYY-MM-DD)")
+      endDate: z.string().describe("End date (YYYY-MM-DD)"),
+      channelId: z.string().optional().describe("Optional YouTube Channel ID (e.g. UCxxxxxxxx). If omitted, queries authenticated account.")
     }),
-    handler: async ({ startDate, endDate }, { getYouTubeClient }: ToolContext) => {
+    handler: async ({ startDate, endDate, channelId }, { getYouTubeClient }: ToolContext) => {
       try {
         const youtubeClient = await getYouTubeClient();
         const result = await youtubeClient.getChannelAnalytics({
           startDate,
           endDate,
-          metrics: ['averageViewPercentage']
+          metrics: ['averageViewPercentage'],
+          channelId
         });
         
         const percentage = result.rows?.[0]?.[0];

@@ -1,237 +1,122 @@
-# YouTube Analytics MCP Server
+# YouTube Analytics Reporting & MCP Server
 
-A Model Context Protocol (MCP) server for YouTube Analytics data access with demographics and discovery tools, built with a scalable config-driven architecture.
+A Model Context Protocol (MCP) server and automated analytics reporting tool for YouTube channels, with built-in multi-channel/agency support, deep demographics, traffic source breakdown, and automated Excel reporting.
 
-## Core Features
+---
 
-- **Channel Analytics**: Get comprehensive channel overview, growth patterns, and vital signs
-- **Video Performance**: Analyze individual video metrics, audience retention, and drop-off points
-- **Viewer Demographics**: Access age/gender breakdowns and geographic distribution data
-- **Discovery Insights**: Understand traffic sources and search terms driving views
-- **Engagement Metrics**: Track likes, comments, shares, and viewer interaction patterns
-- **Audience Retention**: Identify exact moments where viewers drop off for content optimization
-- **Performance Comparison**: Compare metrics between different time periods
-- **Public Channel Analysis**: Research competitor channels and trending content
+## 🎯 Project Objective & Target Excel Structure
 
-## Core Architecture Principles
+This tool extracts video-level and topic-level performance metrics across **all languages** (e.g., `#BaatGharKi` series) for the **last 2 financial years** (FY 2024-25 & FY 2025-26) and generates an Excel report with the following structure:
 
-This MCP server follows a **config-driven architecture** that provides:
+### Target Excel Headers:
+| Column | Header | Description |
+|---|---|---|
+| **A** | `Urls/ Topic` | Full YouTube Video URL and topic title |
+| **B** | `Lang` | Language of the video (Hindi, English, Tamil, Telugu, Kannada, Malayalam, Marathi, Bengali, etc.) |
+| **C** | `Youtube Search Views` | Organic views originating specifically from YouTube Search |
+| **D** | `Playlists (Views)` | Views originating from YouTube Playlists |
+| **E** | `EndScreens (Views)` | Views driven by Endscreen elements |
+| **F** | `Views (Organic)` | Total organic views on the video |
+| **G** | `Watch time (hr)` | Total watch time accumulated (in hours) |
+| **H** | `Likes` | Total likes received |
+| **I** | `Avg Duration View` | Average view duration (MM:SS) |
+| **J** | `Returning viewers` | Returning viewer traffic / retention metric |
+| **K** | `Subscribers` | Net subscribers gained from the video |
+| **L** | `Age (years)` | Video age in years since publish date |
+| **M** | `Trends` | Performance trend / period-over-period growth |
 
-- **Maintainability**: Clear separation between tool definitions and implementation
-- **Scalability**: Easy to add new tools without modifying core server logic
-- **Consistency**: Standardized error handling and response formatting
-- **Readability**: Clean, declarative configuration that serves as documentation
+---
 
-## Setup
+## 🚀 Quick Setup on Another Machine
 
-### 1. Google API Credentials
+Follow these steps if you are setting up this repository on the laptop that has the authorized Google account:
 
-To use this YouTube Analytics MCP server, you need to set up Google API credentials:
+### 1. Prerequisites
+- **Node.js** (v18 or higher): [Download Node.js](https://nodejs.org/)
+- **Git**: [Download Git](https://git-scm.com/)
 
-1. Go to the [Google Cloud Console](https://console.cloud.google.com/)
-2. Create a new project or select an existing one
-3. Enable the YouTube Analytics API and YouTube Data API v3
-4. Go to "Credentials" and create a new OAuth 2.0 Client ID
-5. Download the credentials as JSON
-6. Save the file as `credentials.json` in the `src/auth/` directory
-
-**Privacy Note**: All data processing happens locally on your computer. Your credentials and analytics data never leave your machine - the server runs entirely locally and connects directly to Google's APIs from your system.
-
-### 2. Development
-
+### 2. Clone the Repository
 ```bash
-# Install dependencies
+git clone https://github.com/quvoid/Youtube-Analytics.git
+cd Youtube-Analytics
+```
+
+### 3. Install Dependencies
+```bash
 npm install
+```
 
-# Build the project
+### 4. Configure Google Cloud OAuth Credentials
+1. In Google Cloud Console:
+   - Ensure **YouTube Data API v3** and **YouTube Analytics API** are enabled.
+   - Go to **Credentials** > Create **OAuth 2.0 Client ID** (Desktop Application).
+   - Under **OAuth consent screen > Test users**, make sure your Google account email is added.
+2. Download the JSON credentials file and place it at:
+   ```
+   src/auth/credentials.json
+   ```
+   *(See `src/auth/credentials.template.json` for reference).*
+
+### 5. Authenticate with Google
+Run the built-in authentication script:
+```bash
+npm run auth
+```
+- It will automatically display an authorization link and listen on port `8888`.
+- Open the link in your browser, log in with the authorized account, grant permissions, and approve.
+- A success message will appear and the access token will automatically be saved to `src/auth/token.json`.
+
+### 6. Build the Project
+```bash
 npm run build
-
-# Run in development mode
-npm run dev
-
-# Inspect with MCP Inspector
-npm run inspect
 ```
 
-## Architecture Overview
+---
 
-## Project Structure
+## 🏢 Multi-Channel & Agency Features
 
-```
-src/
-├── index.ts                 # Main server entry point (config-driven)
-├── tool-configs.ts         # Central tool configuration aggregator
-├── types.ts                # TypeScript interfaces and types
-├── auth/
-│   ├── tool-configs.ts     # Authentication tool configurations
-│   └── ...
-├── server/
-│   ├── info-configs.ts     # Server info tool configurations
-│   └── ...
-└── youtube/tools/
-    ├── channel-configs.ts  # Channel analysis tool configurations
-    ├── health-configs.ts   # Channel health tool configurations
-    ├── audience-configs.ts # Audience demographics tool configurations
-    ├── discovery-configs.ts # Traffic source tool configurations
-    ├── performance-configs.ts # Performance analysis tool configurations
-    └── engagement-configs.ts # Engagement metrics tool configurations
-```
+This server includes full support for agencies managing multiple client channels:
+- Every tool accepts an optional **`channelId`** parameter (e.g. `UC7R0m2JO9EsJNJZPDR2U7YQ`).
+- Query any client channel where your Google account has been added as a **Viewer** or **Manager** in YouTube Studio.
+- Set a default channel in your environment:
+  ```bash
+  export YOUTUBE_CHANNEL_ID="UC7R0m2JO9EsJNJZPDR2U7YQ"
+  ```
 
-## Tool Configuration Structure
+---
 
-Each tool is defined by a configuration object:
+## 🤖 Using as an MCP Server (Claude Desktop / Cursor)
 
-```typescript
-interface ToolConfig<T = any> {
-  name: string;           // Tool name
-  description: string;    // Tool description
-  schema: any;           // Zod schema for validation
-  handler: (params: T, context: ToolContext) => Promise<ToolResult>;
-  category?: string;      // Optional grouping
-}
-```
+Add to your `claude_desktop_config.json`:
 
-## Available Tools
-
-### Authentication Tools
-- `check_auth_status` - Check YouTube authentication status
-- `revoke_auth` - Revoke authentication and clear tokens
-
-### Channel Tools
-- `get_channel_info` - Get basic channel information
-- `get_channel_videos` - Get list of channel videos with filters
-
-### Health Tools
-- `get_channel_overview` - Get channel vital signs and growth patterns
-- `get_comparison_metrics` - Compare metrics between time periods
-- `get_average_view_percentage` - Get average view percentage
-
-### Audience Tools
-- `get_video_demographics` - Get age/gender breakdown
-- `get_geographic_distribution` - Get viewer geographic distribution
-- `get_subscriber_analytics` - Get subscriber vs non-subscriber analytics
-
-### Discovery Tools
-- `get_traffic_sources` - Get traffic source analysis
-- `get_search_terms` - Get search terms for SEO insights
-
-### Performance Tools
-- `get_audience_retention` - Track viewer retention patterns
-- `get_retention_dropoff_points` - Find exact drop-off moments
-
-### Engagement Tools
-- `get_engagement_metrics` - Analyze likes, comments, and shares
-
-## Adding New Tools
-
-To add a new tool, simply create a configuration object and add it to the appropriate config file:
-
-```typescript
-// In src/youtube/tools/new-category-configs.ts
-export const newCategoryToolConfigs: ToolConfig[] = [
-  {
-    name: "new_tool_name",
-    description: "Description of what the tool does",
-    category: "new_category",
-    schema: z.object({
-      // Define your parameters here
-      param1: z.string().describe("Description of parameter 1"),
-      param2: z.number().optional().describe("Optional parameter 2"),
-    }),
-    handler: async ({ param1, param2 }, { getYouTubeClient }: ToolContext) => {
-      try {
-        const youtubeClient = await getYouTubeClient();
-        // Your tool implementation here
-        
-        return {
-          content: [{
-            type: "text",
-            text: "Tool result here"
-          }]
-        };
-      } catch (error) {
-        return {
-          content: [{
-            type: "text",
-            text: `Error: ${error instanceof Error ? error.message : String(error)}`
-          }],
-          isError: true
-        };
+```json
+{
+  "mcpServers": {
+    "youtube-analytics": {
+      "command": "node",
+      "args": [
+        "/path/to/Youtube-Analytics/build/index.js"
+      ],
+      "env": {
+        "YOUTUBE_CHANNEL_ID": "UC7R0m2JO9EsJNJZPDR2U7YQ"
       }
-    },
-  },
-];
-
-// Then add to src/tool-configs.ts
-export const allToolConfigs = [
-  // ... existing configs
-  ...newCategoryToolConfigs,
-];
-```
-
-## Benefits of Config-Driven Architecture
-
-1. **Clean Separation**: Tool definitions are separate from server setup
-2. **Type Safety**: Full TypeScript support for schemas and handlers
-3. **Documentation**: Config serves as living documentation
-4. **Testing**: Easier to unit test individual tools
-5. **Extensibility**: Simple to add new tool categories
-6. **Maintainability**: Consistent patterns across all tools
-7. **Scalability**: Easy to manage many tools without cluttering main file
-
-## Server Registration Pattern
-
-The server automatically registers all tools from configuration:
-
-```typescript
-// Automatic registration from configs - no manual server.tool() calls needed
-allToolConfigs.forEach((toolConfig) => {
-  server.tool(
-    toolConfig.name,           // Tool name from config
-    toolConfig.description,    // Description from config
-    toolConfig.schema,         // Zod schema from config  
-    async (params: any) => {   // Handler wrapper
-      return toolConfig.handler(params, { 
-        authManager, 
-        getYouTubeClient, 
-        clearYouTubeClientCache 
-      });
     }
-  );
-});
-```
-
-## Error Handling
-
-All tools follow a consistent error handling pattern:
-
-```typescript
-try {
-  // Tool implementation
-  return {
-    content: [{ type: "text", text: "Success result" }]
-  };
-} catch (error) {
-  return {
-    content: [{ 
-      type: "text", 
-      text: `Error: ${error instanceof Error ? error.message : String(error)}` 
-    }],
-    isError: true
-  };
+  }
 }
 ```
 
-## Context Injection
+---
 
-Tools receive a context object with shared dependencies:
+## 🛠️ Available MCP Tools
 
-```typescript
-interface ToolContext {
-  authManager: AuthManager;
-  getYouTubeClient: () => Promise<YouTubeClient>;
-  clearYouTubeClientCache: () => void;
-}
-```
-
-This architecture makes the codebase more maintainable, scalable, and easier to extend while preserving all existing functionality.
+- `get_channel_info`: Get channel statistics & snippet by `channelId`
+- `get_channel_videos`: List videos with search query & date range filters
+- `get_channel_overview`: Channel vital signs (views, watch time, subs gained/lost)
+- `get_comparison_metrics`: Compare metrics between two time periods
+- `get_traffic_sources`: Breakdown by YouTube search, playlists, suggested videos, etc.
+- `get_video_demographics`: Age & gender audience breakdown
+- `get_geographic_distribution`: Country-wise view and watch time distribution
+- `get_audience_retention`: Frame-by-frame retention percentage
+- `get_retention_dropoff_points`: Pinpoints exact moments where viewers drop off
+- `get_engagement_metrics`: Likes, comments, and shares analysis
+- `get_optimal_posting_time`: Day-of-week engagement pattern analysis
