@@ -71,6 +71,31 @@ npm run auth
 npm run build
 ```
 
+### 7. Generate the Excel Report
+To extract all videos across all languages for the last 2 financial years into Excel:
+```bash
+npm run export
+```
+This generates `YouTube_Analytics_Report.xlsx` with the exact column headers:
+- `Urls/ Topic`
+- `Lang`
+- `Youtube Search Views`
+- `Playlists (Views)`
+- `EndScreens (Views)`
+- `Views (Organic)`
+- `Watch time (hr)`
+- `Likes`
+- `Avg Duration View`
+- `Returning viewers`
+- `Subscribers`
+- `Age (years)`
+- `Trends`
+
+You can also specify a custom channel ID or date range:
+```bash
+YOUTUBE_CHANNEL_ID="UC7R0m2JO9EsJNJZPDR2U7YQ" npm run export
+```
+
 ---
 
 ## 🏢 Multi-Channel & Agency Features
